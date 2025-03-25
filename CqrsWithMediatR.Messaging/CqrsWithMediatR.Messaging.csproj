@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.13.2" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.4" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CqrsWithMediatR.Configuration\CqrsWithMediatR.Configuration.csproj" />
+    <ProjectReference Include="..\CqrsWithMediatR.Contracts\CqrsWithMediatR.Contracts.csproj" />
+    <ProjectReference Include="..\CqrsWithMediatR.WriteSync\CqrsWithMediatR.WriteSync.csproj" />
+  </ItemGroup>
+
+</Project>

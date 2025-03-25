@@ -1,0 +1,6 @@
+@CqrsWithMediatR.API_HostAddress = http://localhost:5058
+
+GET {{CqrsWithMediatR.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
