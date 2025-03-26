@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35514.174 d17.12
+VisualStudioVersion = 17.12.35514.174
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CqrsWithMediatR.API", "CqrsWithMediatR.API\CqrsWithMediatR.API.csproj", "{0430D7C3-9A56-475A-A6B2-97838CDE73C1}"
 EndProject
@@ -25,6 +25,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		README-What-Is-CQRS.txt = README-What-Is-CQRS.txt
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CqrsWithMediatR.Authentication", "CqrsWithMediatR.Authentication\CqrsWithMediatR.Authentication.csproj", "{2B253015-01B7-4788-BAD5-588E41582E42}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -68,6 +70,10 @@ Global
 		{5F0A6B1B-1AE9-4FAD-998E-2D5C340784E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F0A6B1B-1AE9-4FAD-998E-2D5C340784E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F0A6B1B-1AE9-4FAD-998E-2D5C340784E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B253015-01B7-4788-BAD5-588E41582E42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B253015-01B7-4788-BAD5-588E41582E42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B253015-01B7-4788-BAD5-588E41582E42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B253015-01B7-4788-BAD5-588E41582E42}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

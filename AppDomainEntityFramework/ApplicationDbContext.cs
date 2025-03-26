@@ -1,15 +1,17 @@
 ﻿using AppDomainEntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace AppDomainEntityFramework
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options) { }
-
         public required DbSet<Product> Products { get; set; }
         public required DbSet<ProductReadOnly> ProductsReadOnly { get; set; }
+        public required DbSet<UserAccount> UserAccounts { get; set; }
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options) { }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -23,6 +25,40 @@ namespace AppDomainEntityFramework
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<UserAccount>(entity =>
+            {
+                // Explicitly set table name
+                entity.ToTable("UserAccounts");
+
+                // Define primary key
+                entity.HasKey(p => p.UserAccountId);
+
+                entity.Property(p => p.UserAccountId)
+                    .HasColumnType("guid")
+                    .HasDefaultValueSql("(newid())")
+                    .IsRequired();
+
+                entity.Property(p => p.FirstName)
+                    .HasColumnType("varchar")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(p => p.LastName)
+                    .HasColumnType("varchar")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(p => p.Login)
+                    .HasColumnType("varchar")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(p => p.Password)
+                    .HasColumnType("varchar")
+                    .HasMaxLength(100)
+                    .IsRequired();
+            });
+
             modelBuilder.Entity<Product>(entity =>
             {
                 // Explicitly set table name
@@ -61,7 +97,18 @@ namespace AppDomainEntityFramework
                     .HasColumnType("DECIMAL(10,2)");
             });
 
+
+            modelBuilder.Entity<UserAccount>().HasData(
+                new UserAccount {
+                    UserAccountId = Guid.Parse("4EC76740-6895-40F4-ABB8-3FBAB440FFF1"),
+                    FirstName = "JWT",
+                    LastName = "Issuer",
+                    Login = "JwtIssuer",
+                    Password = "5AfOmFg6TwOudeFBqxwkFQ==.FpN5yzKjshmyvOuDxS/khiFcwdTXXUGhhy1ixnsq6m4="
+                });
+
             base.OnModelCreating(modelBuilder);
+
         }
     }
 }

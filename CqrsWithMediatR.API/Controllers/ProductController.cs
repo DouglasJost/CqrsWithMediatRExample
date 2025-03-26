@@ -5,11 +5,13 @@ using System;
 using CqrsWithMediatR.Exceptions;
 using CqrsWithMediatR.Write.Features.Products.Commands;
 using CqrsWithMediatR.Read.Features.Products.Queries;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CqrsWithMediatR.API.Controllers
 {
     [ApiController]
     [Route("api/products")]
+    [Authorize]
 
     public class ProductController : ControllerBase
     {

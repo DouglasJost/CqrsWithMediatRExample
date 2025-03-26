@@ -19,6 +19,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Threading.Tasks;
 
@@ -36,20 +37,8 @@ namespace CqrsWithMediatR.API
 
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
-            // Add services to the DI container.
-            // 
-            //var keyVaultUrl = Environment.GetEnvironmentVariable(KeyVaultSecretNames.Azure_KeyVault_Url)
-            //    ?? throw new InvalidOperationException("The key vault URL is not defined.");
-            //builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUrl), new DefaultAzureCredential());
-            ////
-            //var kvSource = SecretSource.EnvironmentVariable;
-            //builder.Services.AddSingleton(new ApplicationKeyVaultService(keyVaultUrl, kvSource));
-
 
             // Register IKeyVaultService as a singleton
-
             var keyVaultUrl = Environment.GetEnvironmentVariable(KeyVaultSecretNames.Azure_KeyVault_Url)
                 ?? throw new InvalidOperationException("The key vault URL is not defined.");
             var kvSource = SecretSource.EnvironmentVariable;
@@ -57,20 +46,18 @@ namespace CqrsWithMediatR.API
             {
                 return new ApplicationKeyVaultService(keyVaultUrl, kvSource);
             });
+            var keyVaultService = new ApplicationKeyVaultService(keyVaultUrl, kvSource);
+
 
             // Register ServiceBusPublisher
             builder.Services.AddSingleton<IMessagePublisher, ServiceBusPublisher>();
+
 
             // Register remaining services that follow the convention MyClassName:IMyClassName
             builder.Services.AddServicesWithDefaultConventions();
 
 
             // Add DB context as a Factory.
-            //   When a db context is needed, the respective class will need to inject a 
-            //   IDbContextFactory and retrieve a context similar to this:
-            //
-            //     await using (var dbContext = await _dbContextFactory.CreateDbContextAsync())
-            //
             builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
                 options.UseInMemoryDatabase("ProductDB")
                         .LogTo(Console.WriteLine, LogLevel.Information));
@@ -91,7 +78,6 @@ namespace CqrsWithMediatR.API
 
 
             // Register ServiceBusClient as Singleton (to prevent connection issues)
-            var keyVaultService = new ApplicationKeyVaultService(keyVaultUrl, kvSource);
             var fullyQualifiedNamespace = await keyVaultService.GetSecretValueAsync(KeyVaultSecretNames.Azure_Service_Bus_Namespace)
                 ?? throw new InvalidOperationException($"The environment variable '{KeyVaultSecretNames.Azure_Service_Bus_Namespace}' is not set in the Development environment.");
             builder.Services.AddSingleton(sp =>
@@ -108,12 +94,56 @@ namespace CqrsWithMediatR.API
             builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 
 
+            // JWT Bearer Token Authentication
+            var authenticationSecretForKey = await keyVaultService.GetSecretValueAsync(KeyVaultSecretNames.Authentication_SecretForKey);
+            var authenticationIssuer = await keyVaultService.GetSecretValueAsync(KeyVaultSecretNames.Authentication_Issuer);
+            var authenticationAudience = await keyVaultService.GetSecretValueAsync(KeyVaultSecretNames.Authentication_Audience);
+            builder.Services.AddAuthentication("Bearer")
+            // Configure the JWT.  Reference appsettings.json / appsettings.Development.json for JWT configuration.
+            .AddJwtBearer(options =>
+            {
+                // Validation rules for incoming tokens
+                options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
+                {
+                    // Verify tokens's iss (issuer) claim against trusted issuer.
+                    ValidateIssuer = true,
+                    // Verify tokens's aud (audience) claim matches this application's audience. 
+                    ValidateAudience = true,
+                    // Validate that the token's signature is correct by using a trusted signing key.
+                    ValidateIssuerSigningKey = true,
+                    // Only tokens issued by this issuer are accepted.
+                    ValidIssuer = authenticationIssuer,
+                    // Only tokens intended for this audience are accepted.
+                    ValidAudience = authenticationAudience,
+                    // This is the security key used to validate the token's signature.
+                    IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(authenticationSecretForKey))
+                };
+
+                options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context => 
+                    {
+                        Console.WriteLine($"JWT authentication failed: {context.Exception.Message}");
+                        return Task.CompletedTask;
+                    }
+                };
+            });
+
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
 
             var app = builder.Build();
+
+
+            // Ensure In-Memory DB is seeded.  REMOVE THIS when migrating to SQL Server database.
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                dbContext.Database.EnsureCreated(); // THIS is the key
+            }
 
 
             // Start the ServiceBusConsumer process
@@ -129,6 +159,7 @@ namespace CqrsWithMediatR.API
 
 
             app.UseHttpsRedirection();
+            app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
 
