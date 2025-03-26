@@ -1,4 +1,3 @@
-
 # CQRS With MediatR Sample Application
 
 ![.NET](https://img.shields.io/badge/.NET-8.0-blueviolet)
@@ -15,23 +14,82 @@ This sample application manages products with the following operations:
 - Create and update products via HTTP POST/PUT (Write Model)
 - Project product changes to a separate read-only view using Azure Service Bus
 - Query read-optimized data via HTTP GET (Read Model)
+- Authenticate users using login/password and issue secure JWT tokens
 
 It is designed as a **learning tool** to demonstrate best practices in:
 
 - CQRS with MediatR
 - Event-driven architecture with Azure Service Bus
+- JWT Authentication
 - ASP.NET Core dependency injection
 - Azure Key Vault to retrieve secrets (Azure-Service-Bus-Namespace, Azure-Service-Bus-QueueName)
 - Clean architecture and project separation
 - Optimistic concurrency (RowVersion)
 
-Please reference README-What-Is-CQRS for a description of the Command Query Responsibility Segregation (CQRS) pattern.
+Please reference **README-What-Is-CQRS** for a description of the Command Query Responsibility Segregation (CQRS) pattern.
+
+---
+
+## 🔐 Authentication (CqrsWithMediatR.Authentication)
+
+The `CqrsWithMediatR.Authentication` project introduces secure JWT Bearer authentication to the system.
+
+### ✅ Anonymous Endpoints
+
+| Method | Route                                | Description                               |
+|--------|--------------------------------------|-------------------------------------------|
+| `POST` | `/api/authentication/hash-password` | Hashes a plain text password (for setup)  |
+| `POST` | `/api/authentication/authenticate`  | Authenticates user and returns a JWT      |
+
+- Use the `/hash-password` endpoint to hash a password when manually creating a user account entry.
+- The `/authenticate` endpoint validates login credentials and returns a signed JWT.
+
+### 🔐 Authentication Workflow
+
+1. **User calls** `POST /api/authentication/authenticate` with a valid `login` and `password`.
+2. A signed JWT is returned along with the token expiration timestamp.
+3. **User must include** the JWT token in the `Authorization` header for all protected API requests:
+   ```
+   Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6...
+   ```
+
+---
+
+## 🔒 Secured Product Endpoints
+
+All product endpoints are now protected with `[Authorize]`:
+
+```csharp
+[Authorize]
+[ApiController]
+[Route("api/products")]
+public class ProductController : ControllerBase
+```
+
+You **must authenticate** and receive a JWT before accessing:
+
+- `GET /api/products`
+- `POST /api/products`
+- `PUT /api/products/{id}`
+- `GET /api/products/filter?...`
+
+---
+
+## 🔄 Updated CQRS + Auth Workflow
+
+1. 🔐 Authenticate:
+   - `POST /api/authentication/authenticate`
+   - Receive token and expiration
+
+2. 📦 Call any product endpoint:
+   - Include `Authorization: Bearer <token>` header
+
+3. 🧠 MediatR dispatches to handlers in the respective read/write layer
 
 ---
 
 ## 🦯 Architecture Diagram (Text View)
 ```
-
            +---------------------------------+
            |           API Gateway           |
            |       ASP.NET Core Web API      |
@@ -70,46 +128,11 @@ Please reference README-What-Is-CQRS for a description of the Command Query Resp
 
 ---
 
-## 🖼️ Architecture Diagram (PlantUML)
-```plantuml
-@startuml
-skinparam componentStyle rectangle
-
-actor Client
-Client --> API
-
-component API {
-  API --> Write : MediatR Send (POST/PUT)
-  API --> Messaging : MediatR Send (for events)
-  API --> Read : MediatR Send (GET)
-}
-
-component Write {
-  Write --> ProductDB : Update
-  Write --> AzureServiceBus : Publish Event
-}
-
-component Messaging {
-  Messaging --> AzureServiceBus : Listen
-  Messaging --> WriteSync : MediatR Send
-}
-
-component WriteSync {
-  WriteSync --> ProductReadOnlyDB : Update
-}
-
-component Read {
-  Read --> ProductReadOnlyDB : Read
-}
-@enduml
-```
-
----
-
 ## 📑 Project Structure
 ```
 Solution/
 ├── CqrsWithMediatR.API             --> ASP.NET Core Web API
+├── CqrsWithMediatR.Authentication  --> JWT auth, token generation, password hashing
 ├── CqrsWithMediatR.Contracts       --> DTOs and Events
 ├── CqrsWithMediatR.Write           --> Write model (commands, handlers)
 ├── CqrsWithMediatR.Read            --> Read model (queries, handlers)
@@ -233,13 +256,6 @@ The **WriteSync** model is responsible for synchronizing the read model (project
 **Purpose:**
 - Keeps read-optimized projections in sync with the authoritative Product data from the write model
 
-- **MediatR** for decoupled command/query dispatch
-- **Azure Service Bus** for async event-driven sync
-- **EF Core In-Memory DB** for local development/testing
-- **Clean separation** between Read and Write models
-- **Key Vault integration** for secret management
-- **Optimistic Concurrency** with RowVersion (planned for SQL Server)
-
 ---
 
 ## 📝 Example Queries
@@ -267,20 +283,26 @@ GET /api/products/filter?price=1000&op=%3E=
 ## 🔧 How to Run
 1. Clone this repo
 2. Create an Azure Service Bus namespace and queue
-3. Set required environment variables:
+3. Set required environment variables and/or Azure Key Vault Secrets:
+   - `Authentication-Audience`
+   - `Authentication-Issuer`
+   - `Authentication-SecretForKey`
    - `Azure-KeyVault-Url`
    - `Azure-Service-Bus-Namespace`
    - `Azure-Service-Bus-QueueName`
-4. Run the API project
-5. Use Postman to test the endpoints
+5. Run the API project
+6. Use Postman to:
+   - Call `POST /api/authentication/authenticate`
+   - Include returned JWT in Authorization header for product endpoints
 
 ---
 
 ## 🚀 Future Enhancements
-- Add API authentication with JWT
 - Replace In-Memory DB with SQL Server
 - Add FluentValidation and validation behaviors
 - Add unit/integration tests
+- Add refresh token support
+- Add CI/CD
 
 ---
 
@@ -290,5 +312,6 @@ MIT
 ---
 
 Feel free to use this as a reference for structuring real-world CQRS applications using MediatR and Azure messaging.
+
 
 
