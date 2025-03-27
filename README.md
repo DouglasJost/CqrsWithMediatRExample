@@ -14,15 +14,15 @@ This sample application manages products with the following operations:
 - Create and update products via HTTP POST/PUT (Write Model)
 - Project product changes to a separate read-only view using Azure Service Bus
 - Query read-optimized data via HTTP GET (Read Model)
-- Authenticate users using login/password and issue secure JWT tokens
+- Authenticate users using login/password and issue secure JWT access and refresh tokens
 
 It is designed as a **learning tool** to demonstrate best practices in:
 
 - CQRS with MediatR
 - Event-driven architecture with Azure Service Bus
-- JWT Authentication
+- JWT Authentication with refresh token rotation
 - ASP.NET Core dependency injection
-- Azure Key Vault to retrieve secrets (Azure-Service-Bus-Namespace, Azure-Service-Bus-QueueName)
+- Azure Key Vault to retrieve secrets (with environment variable fallback)
 - Clean architecture and project separation
 - Optimistic concurrency (RowVersion)
 
@@ -32,27 +32,29 @@ Please reference **README-What-Is-CQRS** for a description of the Command Query 
 
 ## 🔐 Authentication (CqrsWithMediatR.Authentication)
 
-The `CqrsWithMediatR.Authentication` project introduces secure JWT Bearer authentication to the system.
+The `CqrsWithMediatR.Authentication` project introduces secure JWT Bearer authentication to the system and includes support for refresh tokens.
 
 ### ✅ Anonymous Endpoints
 
-| Method | Route                                | Description                               |
-|--------|--------------------------------------|-------------------------------------------|
-| `POST` | `/api/authentication/hash-password` | Hashes a plain text password (for setup)  |
-| `POST` | `/api/authentication/authenticate`  | Authenticates user and returns a JWT      |
+| Method | Route                               | Description                                     |
+|--------|-------------------------------------|-------------------------------------------------|
+| `POST` | `/api/authentication/hash-password` | Hashes a plain text password (for setup)        |
+| `POST` | `/api/authentication/authenticate`  | Authenticates user and returns a JWT + refresh  |
+| `POST` | `/api/authentication/refresh-token` | Exchanges valid refresh token for new JWT token |
 
 - Use the `/hash-password` endpoint to hash a password when manually creating a user account entry.
-- The `/authenticate` endpoint validates login credentials and returns a signed JWT.
+- Use the `/authenticate` endpoint validates login credentials and returns a signed JWT for protected endpoints and a refresh token for renewal.
+- Use the `/refresh-token` - allows client to renew access without resending credentials   
 
 ### 🔐 Authentication Workflow
 
 1. **User calls** `POST /api/authentication/authenticate` with a valid `login` and `password`.
-2. A signed JWT is returned along with the token expiration timestamp.
+2. A signed JWT is returned along with the token expiration timestamp and Refresh Token.
 3. **User must include** the JWT token in the `Authorization` header for all protected API requests:
    ```
    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6...
    ```
-
+4. When token expires, use `POST /api/authentication/refresh-token` to renew
 ---
 
 ## 🔒 Secured Product Endpoints
@@ -79,12 +81,16 @@ You **must authenticate** and receive a JWT before accessing:
 
 1. 🔐 Authenticate:
    - `POST /api/authentication/authenticate`
-   - Receive token and expiration
+   - Receive access token and expiration, and refresh token
 
 2. 📦 Call any product endpoint:
    - Include `Authorization: Bearer <token>` header
 
 3. 🧠 MediatR dispatches to handlers in the respective read/write layer
+
+4. 🔐 RefreshToken:
+   - `POST /api/authentication/refresh-token`
+   -  Receive new access token and expiration, and new refresh token
 
 ---
 
@@ -132,7 +138,7 @@ You **must authenticate** and receive a JWT before accessing:
 ```
 Solution/
 ├── CqrsWithMediatR.API             --> ASP.NET Core Web API
-├── CqrsWithMediatR.Authentication  --> JWT auth, token generation, password hashing
+├── CqrsWithMediatR.Authentication  --> JWT auth, token generation, refresh token, password hashing
 ├── CqrsWithMediatR.Contracts       --> DTOs and Events
 ├── CqrsWithMediatR.Write           --> Write model (commands, handlers)
 ├── CqrsWithMediatR.Read            --> Read model (queries, handlers)
