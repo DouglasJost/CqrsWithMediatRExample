@@ -54,7 +54,7 @@ The `CqrsWithMediatR.Authentication` project introduces secure JWT Bearer authen
    ```
    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6...
    ```
-4. When token expires, use `POST /api/authentication/refresh-token` to renew
+4. To renew token before it expires, use `POST /api/authentication/refresh-token` to renew
 ---
 
 ## 🔒 Secured Product Endpoints
