@@ -57,6 +57,15 @@ namespace AppDomainEntityFramework
                     .HasColumnType("varchar")
                     .HasMaxLength(100)
                     .IsRequired();
+
+                entity.Property(p => p.RefreshToken)
+                    .HasColumnType("varchar")
+                    .HasMaxLength(100)
+                    .IsRequired(false);
+
+                entity.Property(p => p.RefreshTokenExpiresAt)
+                    .HasColumnType("datetime2(7)")
+                    .IsRequired(false);
             });
 
             modelBuilder.Entity<Product>(entity =>

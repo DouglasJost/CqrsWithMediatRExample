@@ -1,5 +1,6 @@
 ﻿using AppDomainEntityFramework;
 using CqrsWithMediatR.Authentication.DTOs;
+using CqrsWithMediatR.Authentication.Utilities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
@@ -49,15 +50,24 @@ namespace CqrsWithMediatR.Authentication.Services
                 }
 
                 // Generate the JWT Token
-                var (jwtToken, tokenExpiration) = await _jwtTokenService.GenerateToken(userAccount);
+                var (accessToken, accessTokenExpiresAt) = await _jwtTokenService.GenerateToken(userAccount);
+
+                // Generate refresh token attributes
+                var (refreshToken, refreshTokenExpiresAt) = TokenGenerator.GenerateRefreshToken();
+
+                // Store refresh token and expiration in UserAccount entry
+                userAccount.RefreshToken = refreshToken;
+                userAccount.RefreshTokenExpiresAt = refreshTokenExpiresAt;
+                await dbContext.SaveChangesAsync();
 
                 return new AuthenticationResponseDto
                 {
-                    Token = jwtToken,
-                    UserId = userAccount.UserAccountId.ToString(),
+                    Token = accessToken,
+                    ExpiresAt = accessTokenExpiresAt,
+                    RefreshToken = refreshToken,
+                    UserAccountId = userAccount.UserAccountId.ToString(),
                     FirstName = userAccount.FirstName,
-                    LastName = userAccount.LastName,
-                    ExpiresAt = tokenExpiration
+                    LastName = userAccount.LastName
                 };
             }
         }

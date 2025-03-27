@@ -21,7 +21,7 @@ namespace CqrsWithMediatR.Authentication.Services
             _keyVaultService = keyVaultService;
         }
 
-        public async Task<(string, DateTime)> GenerateToken(UserAccount user)
+        public async Task<(string jwtToken, DateTime tokenExpiration)> GenerateToken(UserAccount user)
         {
             var base64Secret = await _keyVaultService.GetSecretValueAsync(KeyVaultSecretNames.Authentication_SecretForKey);
             var issuer = await _keyVaultService.GetSecretValueAsync(KeyVaultSecretNames.Authentication_Issuer);

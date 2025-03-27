@@ -14,13 +14,16 @@ namespace CqrsWithMediatR.API.Controllers
     {
         private readonly IPasswordService _passwordService;
         private readonly IAuthenticationService _authenticationService;
+        private readonly IRefreshTokenService _refreshTokenService;
 
         public AuthenticationController(
             IPasswordService passwordService,
-            IAuthenticationService authenticationService) 
+            IAuthenticationService authenticationService,
+            IRefreshTokenService refreshTokenService) 
         {
             _passwordService = passwordService;
             _authenticationService = authenticationService;
+            _refreshTokenService = refreshTokenService;
         }
 
         [AllowAnonymous]
@@ -54,6 +57,26 @@ namespace CqrsWithMediatR.API.Controllers
             catch (ArgumentNullException ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred.", details = ex.Message });
+            }
+        }
+
+        [Route("refresh-token")]
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
+        {
+            try 
+            {
+                var result = await _refreshTokenService.RefreshTokenAsync(request.RefreshToken);
+                return Ok(result);
             }
             catch (UnauthorizedAccessException ex)
             {

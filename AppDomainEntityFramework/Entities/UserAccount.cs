@@ -11,5 +11,8 @@ namespace AppDomainEntityFramework.Entities
         public string LastName { get; set; } = string.Empty;
         public string Login {  get; set; } = string.Empty;
         public string Password {  get; set; } = string.Empty;
+
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiresAt { get; set; }
     }
 }
