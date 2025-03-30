@@ -116,6 +116,16 @@ namespace AppDomainEntityFramework
                     Password = "5AfOmFg6TwOudeFBqxwkFQ==.FpN5yzKjshmyvOuDxS/khiFcwdTXXUGhhy1ixnsq6m4="
                 });
 
+            modelBuilder.Entity<UserAccount>().HasData(
+                new UserAccount
+                {
+                    UserAccountId = Guid.Parse("9B2E1B59-56B0-41E4-B1AA-52418591E40C"),
+                    FirstName = "QA",
+                    LastName = "TestUser",
+                    Login = "QATestUser",
+                    Password = "0blgA5Hpn+WErqfeZe9IJg==.Q/mx5MQRlEmZHHKUiYnH5jWrxHKSTK5InQUi3tZQXqk="
+                });
+
             base.OnModelCreating(modelBuilder);
 
         }
