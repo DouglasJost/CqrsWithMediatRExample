@@ -142,6 +142,7 @@ Solution/
 ├── CqrsWithMediatR.Contracts       --> DTOs and Events
 ├── CqrsWithMediatR.Write           --> Write model (commands, handlers)
 ├── CqrsWithMediatR.Read            --> Read model (queries, handlers)
+├── CqrsWithMediatR.Tests           --> Unit and integration tests
 ├── CqrsWithMediatR.WriteSync       --> Read-side sync from events
 ├── CqrsWithMediatR.Messaging       --> Azure Service Bus infrastructure
 ├── AppDomainEntityFramework        --> Shared EF Core DbContext + Entities
