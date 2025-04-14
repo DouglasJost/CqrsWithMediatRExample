@@ -1,14 +1,11 @@
 ﻿using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 using CqrsWithMediatR.API;
 using CqrsWithMediatR.Tests.Utilities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Xunit;
 
 namespace CqrsWithMediatR.Tests.Integration
 {

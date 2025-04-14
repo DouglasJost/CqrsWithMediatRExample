@@ -15,7 +15,8 @@ namespace CqrsWithMediatR.Tests.Utilities
             var payload = new
             {
                 login = "QATestUser",
-                password = "GoodbyeRubyTuesday"
+                password = "GoodbyeRubyTuesday",
+                refreshToken = "refreshToken"
             };
 
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
@@ -24,7 +25,7 @@ namespace CqrsWithMediatR.Tests.Utilities
             response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadAsStringAsync();
             var tokenObj = JsonDocument.Parse(json);
-            return tokenObj.RootElement.GetProperty("token").GetString()!;
+            return tokenObj.RootElement.GetProperty("authenticationToken").GetString()!;
         }
     }
 }

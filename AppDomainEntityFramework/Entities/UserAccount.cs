@@ -1,6 +1,4 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AppDomainEntityFramework.Entities
 {
@@ -13,6 +11,5 @@ namespace AppDomainEntityFramework.Entities
         public string Password {  get; set; } = string.Empty;
 
         public string? RefreshToken { get; set; }
-        public DateTime? RefreshTokenExpiresAt { get; set; }
     }
 }

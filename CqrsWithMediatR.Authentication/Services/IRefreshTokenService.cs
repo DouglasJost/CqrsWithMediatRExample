@@ -5,6 +5,6 @@ namespace CqrsWithMediatR.Authentication.Services
 {
     public interface IRefreshTokenService
     {
-        Task<RefreshTokenResponseDto> RefreshTokenAsync(string refreshToken);
+        Task<RefreshTokenResponseDto> RefreshTokenAsync(string login, string password, string refreshToken);
     }
 }

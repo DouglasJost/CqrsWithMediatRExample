@@ -109,6 +109,8 @@ namespace CqrsWithMediatR.API
                     ValidateIssuer = true,
                     // Verify tokens's aud (audience) claim matches this application's audience. 
                     ValidateAudience = true,
+                    // Verify token's expiration date/time
+                    ValidateLifetime = true,
                     // Validate that the token's signature is correct by using a trusted signing key.
                     ValidateIssuerSigningKey = true,
                     // Only tokens issued by this issuer are accepted.
@@ -116,7 +118,9 @@ namespace CqrsWithMediatR.API
                     // Only tokens intended for this audience are accepted.
                     ValidAudience = authenticationAudience,
                     // This is the security key used to validate the token's signature.
-                    IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(authenticationSecretForKey))
+                    IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(authenticationSecretForKey)),
+                    // Eliminate and expiration grace period (seems a default 5-minute grace period maybe present)
+                    ClockSkew = TimeSpan.Zero
                 };
 
                 options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
@@ -139,6 +143,8 @@ namespace CqrsWithMediatR.API
 
 
             // Ensure In-Memory DB is seeded.  REMOVE THIS when migrating to SQL Server database.
+            //
+            // EnsureCreated() ensures schema and seed data exist.  Only needed for In-Memory DB.
             using (var scope = app.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

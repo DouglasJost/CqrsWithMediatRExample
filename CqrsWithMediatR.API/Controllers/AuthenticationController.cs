@@ -3,6 +3,7 @@ using CqrsWithMediatR.Authentication.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
@@ -15,12 +16,15 @@ namespace CqrsWithMediatR.API.Controllers
         private readonly IPasswordService _passwordService;
         private readonly IAuthenticationService _authenticationService;
         private readonly IRefreshTokenService _refreshTokenService;
+        private readonly ILogger<AuthenticationController> _logger;
 
         public AuthenticationController(
+            ILogger<AuthenticationController> logger,
             IPasswordService passwordService,
             IAuthenticationService authenticationService,
             IRefreshTokenService refreshTokenService) 
         {
+            _logger = logger;
             _passwordService = passwordService;
             _authenticationService = authenticationService;
             _refreshTokenService = refreshTokenService;
@@ -31,6 +35,8 @@ namespace CqrsWithMediatR.API.Controllers
         [HttpPost]
         public IActionResult HashPassword([FromBody] HashPasswordRequestDto request)
         {
+            _logger.LogInformation($"EndPoint:HashPassword, request.PlainPassword: {request.PlainPassword}");
+
             if (string.IsNullOrWhiteSpace(request.PlainPassword))
             {
                 return BadRequest("Password cannot be empty.");
@@ -75,7 +81,7 @@ namespace CqrsWithMediatR.API.Controllers
         {
             try 
             {
-                var result = await _refreshTokenService.RefreshTokenAsync(request.RefreshToken);
+                var result = await _refreshTokenService.RefreshTokenAsync(request.Login, request.Password, request.RefreshToken);
                 return Ok(result);
             }
             catch (UnauthorizedAccessException ex)

@@ -1,6 +1,5 @@
 ﻿using AppDomainEntityFramework;
 using CqrsWithMediatR.Authentication.DTOs;
-using CqrsWithMediatR.Authentication.Utilities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
@@ -11,16 +10,16 @@ namespace CqrsWithMediatR.Authentication.Services
     {
         private readonly IDbContextFactory<ApplicationDbContext> _dbContextFactory;
         private readonly IPasswordHasher _passwordHasher;
-        private readonly IJwtTokenService _jwtTokenService;
+        private readonly IAuthenticationTokenService _authenticationTokenService;
 
         public AuthenticationService(
             IDbContextFactory<ApplicationDbContext> dbContextFactory,
             IPasswordHasher passwordHasher,
-            IJwtTokenService jwtTokenService)
+            IAuthenticationTokenService authenticationTokenService)
         {
             _dbContextFactory = dbContextFactory;
             _passwordHasher = passwordHasher;
-            _jwtTokenService = jwtTokenService;
+            _authenticationTokenService = authenticationTokenService;
         }
 
         public async Task<AuthenticationResponseDto> Authenticate(string login, string password)
@@ -50,19 +49,18 @@ namespace CqrsWithMediatR.Authentication.Services
                 }
 
                 // Generate the JWT Token
-                var (accessToken, accessTokenExpiresAt) = await _jwtTokenService.GenerateToken(userAccount);
+                var (accessToken, accessTokenExpiresAt) = await _authenticationTokenService.GenerateAuthenticationToken(userAccount);
 
                 // Generate refresh token attributes
-                var (refreshToken, refreshTokenExpiresAt) = TokenGenerator.GenerateRefreshToken();
+                var refreshToken = _authenticationTokenService.GenerateRefreshToken();
 
                 // Store refresh token and expiration in UserAccount entry
                 userAccount.RefreshToken = refreshToken;
-                userAccount.RefreshTokenExpiresAt = refreshTokenExpiresAt;
                 await dbContext.SaveChangesAsync();
 
                 return new AuthenticationResponseDto
                 {
-                    Token = accessToken,
+                    AuthenticationToken = accessToken,
                     ExpiresAt = accessTokenExpiresAt,
                     RefreshToken = refreshToken,
                     UserAccountId = userAccount.UserAccountId.ToString(),

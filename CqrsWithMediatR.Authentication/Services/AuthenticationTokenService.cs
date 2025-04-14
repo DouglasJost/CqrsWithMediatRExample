@@ -6,22 +6,24 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace CqrsWithMediatR.Authentication.Services
 {
-    public class JwtTokenService : IJwtTokenService
+    public class AuthenticationTokenService : IAuthenticationTokenService
     {
-        private const int TokenLifetimeMinutes = 60;
+        private const int TokenLifetimeMinutes = 5;
+        private const int RefreshTokenByteSize = 64;
 
         private readonly IKeyVaultService _keyVaultService;
 
-        public JwtTokenService(IKeyVaultService keyVaultService) 
+        public AuthenticationTokenService(IKeyVaultService keyVaultService)
         {
             _keyVaultService = keyVaultService;
         }
 
-        public async Task<(string jwtToken, DateTime tokenExpiration)> GenerateToken(UserAccount user)
+        public async Task<(string jwtToken, DateTime tokenExpiration)> GenerateAuthenticationToken(UserAccount user)
         {
             var base64Secret = await _keyVaultService.GetSecretValueAsync(KeyVaultSecretNames.Authentication_SecretForKey);
             var issuer = await _keyVaultService.GetSecretValueAsync(KeyVaultSecretNames.Authentication_Issuer);
@@ -62,6 +64,13 @@ namespace CqrsWithMediatR.Authentication.Services
             var jwtToken = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
 
             return (jwtToken, tokenExpiration);
+        }
+
+        public string GenerateRefreshToken()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(RefreshTokenByteSize);
+            var token = Convert.ToBase64String(bytes);
+            return token;
         }
     }
 }

@@ -10,11 +10,13 @@ using CqrsWithMediatR.Authentication.Services;
 using CqrsWithMediatR.API.Controllers;
 using AppDomainEntityFramework.Entities;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace CqrsWithMediatR.Tests.Controllers
 {
     public class AuthenticationControllerTests
     {
+        private readonly Mock<ILogger<AuthenticationController>> _logger;
         private readonly Mock<IPasswordService> _passwordServiceMock;
         private readonly Mock<IAuthenticationService> _authenticationServiceMock;
         private readonly Mock<IRefreshTokenService> _refreshTokenServiceMock;
@@ -22,11 +24,13 @@ namespace CqrsWithMediatR.Tests.Controllers
 
         public AuthenticationControllerTests()
         {
+            _logger = new Mock<ILogger<AuthenticationController>>();
             _passwordServiceMock = new Mock<IPasswordService>();
             _authenticationServiceMock = new Mock<IAuthenticationService>();
             _refreshTokenServiceMock = new Mock<IRefreshTokenService>();
 
             _controller = new AuthenticationController(
+                _logger.Object,
                 _passwordServiceMock.Object,
                 _authenticationServiceMock.Object,
                 _refreshTokenServiceMock.Object);
@@ -86,8 +90,8 @@ namespace CqrsWithMediatR.Tests.Controllers
             };
 
             var response = new AuthenticationResponseDto() 
-            { 
-                Token = "jwt-token", 
+            {
+                AuthenticationToken = "jwt-token", 
                 ExpiresAt = DateTime.UtcNow.AddHours(1),
                 RefreshToken = "Refresh Token",
                 UserAccountId = "User Account Id",
@@ -150,19 +154,21 @@ namespace CqrsWithMediatR.Tests.Controllers
         {
             // Arrange
             var request = new RefreshTokenRequestDto() 
-            { 
+            {
+                Login = "user",
+                Password = "pass",
                 RefreshToken = "old-refresh-token"
             };
 
             var response = new RefreshTokenResponseDto() 
-            { 
-                Token = "new-token", 
+            {
+                AuthenticationToken = "new-token", 
                 RefreshToken = "new-refresh-token", 
                 ExpiresAt = DateTime.UtcNow.AddHours(1) 
             };
 
             _refreshTokenServiceMock
-                .Setup(r => r.RefreshTokenAsync(request.RefreshToken))
+                .Setup(r => r.RefreshTokenAsync(request.Login, request.Password, request.RefreshToken))
                 .ReturnsAsync(response);
 
             // Act
@@ -182,12 +188,14 @@ namespace CqrsWithMediatR.Tests.Controllers
         {
             // Arrange
             var request = new RefreshTokenRequestDto()
-            { 
+            {
+                Login = "user",
+                Password = "pass",
                 RefreshToken = "invalid-token" 
             };
             
             _refreshTokenServiceMock
-                .Setup(r => r.RefreshTokenAsync(request.RefreshToken))
+                .Setup(r => r.RefreshTokenAsync(request.Login, request.Password, request.RefreshToken))
                 .ThrowsAsync(new UnauthorizedAccessException());
 
             // Act
